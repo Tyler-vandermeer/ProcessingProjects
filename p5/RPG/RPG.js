@@ -1,29 +1,25 @@
 var tiles = [];
 var player;
-var visibility = 150;
-var tileWidth = 25;
-var tileCount = 150;
+var tileWidth = 5;
+var tileCount = 100;
 var tileOffset = -(tileWidth * tileCount) / 2;
 var wall = false;
+var initialNoiseX = 10000;
+var initialNoiseY = 10000;
 
 function setup() {
-  createCanvas(480, 300);
+  createCanvas(tileWidth * tileCount, tileWidth * tileCount);
   rectMode(CENTER);
   player = new Player(width/2,height/2,10,10);
   InitializeArray();
 }
 
 function InitializeArray() {
-  var yoff = 0;
   for (var i = 0; i < tileCount; i++) {
     var temp = [];
-    var xoff = 0;
     for (var j = 0; j < tileCount; j++) {
-      var rand = GetTileType(noise(xoff, yoff));
-      temp.push(new Tile(tileOffset + (j * tileWidth), tileWidth + (i * tileWidth), tileWidth, rand));
-      xoff += 0.01;
+      temp.push(new Tile(j * tileWidth, tileWidth + (i * tileWidth), tileWidth, 1));
     }
-    yoff+=0.01;
     tiles.push(temp);
   }
 }
@@ -42,27 +38,18 @@ function GetTileType(r) {
 
 function drawBackground() {
   if (tiles.length > 0) {
+    var yOff = initialNoiseY;
     tiles.forEach(function(row) {
+      var xOff = initialNoiseX;
       row.forEach(function(tile){
-        tile.update(player);
-        if (tile.display) {
-          tile.draw();
-        } else {
-          if (OnScreen(tile)) {
-            tile.draw();
-            tile.display = true;
-          }
-        }
+        var n = noise(xOff, yOff);
+        tile.UpdateColour(GetTileType(n));
+        tile.draw();
+        xOff += 0.01
       });
+      yOff += 0.01;
     });
   }
-}
-
-function OnScreen(obj) {
-  return obj.x - obj.r >= -tileWidth &&
-         obj.x + obj.r <= width+tileWidth &&
-         obj.y - obj.r >= -tileWidth &&
-         obj.y + obj.r <= height+tileWidth;
 }
 
 function Collision(obj1, obj2) {
@@ -70,10 +57,6 @@ function Collision(obj1, obj2) {
          obj1.x + obj1.r <= obj2.x + obj2.r &&
          obj1.y - obj1.r >= obj2.y - obj2.y &&
          obj1.y + obj1.r <= obj2.y + obj2.r;
-}
-
-function TileInRange(x, y) {
-  return CalculateDistance(x, player.x, y, player.y) <= visibility;
 }
 
 function CalculateDistance(x1, x2, y1, y2) {
@@ -86,9 +69,15 @@ function draw() {
   drawBackground();
   player.draw();
   
-  if (!wall) {
-    player.update();  
-  } else {
-    console.log('here');
+  player.update();
+  if (player.x == width * 0.18 && (keyIsDown(LEFT_ARROW) || keyIsDown(65))) {
+    initialNoiseX -= 0.01;
+  } else if (player.x == width - (width * 0.18) && (keyIsDown(RIGHT_ARROW) || keyIsDown(68))) {
+    initialNoiseX += 0.01;
+  }
+  if (player.y == height * 0.18 && (keyIsDown(UP_ARROW) || keyIsDown(87))) {
+    initialNoiseY -= 0.01;
+  } else if (player.y == height - (height * 0.18) && ((keyIsDown(DOWN_ARROW) || keyIsDown(83)))) {
+    initialNoiseY += 0.01;
   }
 }
